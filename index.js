@@ -13,15 +13,20 @@ const fs = require("fs");
 
 dontenv.config();
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://blog-application-blogclient.vercel.app",
+];
+
 mongoose
-.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log("Connected to MongoDB");
-})
-.catch((err) => console.log(err));
+  .connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => console.log(err));
 
 // const storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
@@ -33,19 +38,17 @@ mongoose
 // });
 
 // mongoose.connect(
-  //   "mongodb+srv://demiladebdm:YDc0LmbapHaxHAX4@cluster0.8atwsuq.mongodb.net/?retryWrites=true&w=majority"
+//   "mongodb+srv://demiladebdm:YDc0LmbapHaxHAX4@cluster0.8atwsuq.mongodb.net/?retryWrites=true&w=majority"
 // );
 
 // Swagger setup
 const specs = swaggerJsdoc(swaggerDocs);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
-
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.json());
 app.use(cookieParser());
 // app.use("/images", express.static(path.join(__dirname, "/images")));
-
 
 // const upload = multer({ dest: "uploads/" });
 // const upload = multer({ storage: storage });
@@ -53,13 +56,11 @@ app.use(cookieParser());
 //   res.status(200).json("File has been uploaded");
 // });
 
-
 const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const postRoute = require("./routes/posts");
 const categoryRoute = require("./routes/categories");
 const emailRoute = require("./routes/emails");
-
 
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
