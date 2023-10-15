@@ -80,7 +80,7 @@ router.post("/", authGuard, async (req, res, next) => {
     const { title, desc, categories, photo, user } = req.body;
 
     // Validate if the required fields are present
-    if (!title || !desc || !categories) {
+    if (!title || !desc || !categories || categories.length === 0) {
       throw new Error("All required fields must be provided");
     }
 
