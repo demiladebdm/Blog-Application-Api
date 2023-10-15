@@ -43,9 +43,18 @@ const secret = process.env.SECRET;
  *       500:
  *         description: Internal Server Error
  */
-router.post("/register", async (req, res) => {
-  const { username, email, password } = req.body;
+router.post("/register", async (req, res, next) => {
   try {
+    const { username, email, password } = req.body;
+
+    //Check if user already in db
+    const user = await User.findOne({ $or: [{ email }, { username }] });
+
+    if (user) {
+      throw new Error("User already registered");
+    }
+
+    //Creating a new user
     const salt = await bcrypt.genSalt(10);
     const hashedPass = await bcrypt.hash(password, salt);
 
@@ -55,12 +64,9 @@ router.post("/register", async (req, res) => {
       password: hashedPass,
     });
 
-    res.status(200).json(newUser);
-    // res.status(200).json(`User Created: ${newUser}`);
-    // const user = await newUser.save();
-    // res.status(200).json(user);
+    return res.status(201).json(newUser);
   } catch (err) {
-    res.status(500).json({ err: "Internal Server Error" });
+    next(err);
   }
 });
 
@@ -94,18 +100,18 @@ router.post("/register", async (req, res) => {
  *       500:
  *         description: Internal Server Error
  */
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json("Wrong credentials!");
+      throw new Error("Email not found")
     }
 
     const validated = await bcrypt.compare(password, user.password);
     if (!validated) {
-      return res.status(400).json("Wrong credentials!");
+      throw new Error("Invalid email or password");
     }
 
     // Create and sign the JWT token
@@ -115,29 +121,15 @@ router.post("/login", async (req, res) => {
         return res.status(500).json("Internal Server Error");
       }
 
-      // Extracting properties to include in the response
       const { password, ...userWithoutPassword } = user._doc;
 
-      // // Set the token in a cookie and send user data in the response
-      // res
-      //   .cookie("token", token)
-      //   .status(200)
-      //   .json({
-      //     ...userWithoutPassword,
-      //     id: user._id,
-      //   });
-
-      // Send user data along with the token in the response
       res.status(200).json({
         token,
         user: userWithoutPassword,
       });
     });
-
-    // const { password, ...others } = user._doc;
-    // res.status(200).json(others);
   } catch (err) {
-    res.status(500).json({ err: "Internal Server Error" });
+    next(err)
   }
 });
 

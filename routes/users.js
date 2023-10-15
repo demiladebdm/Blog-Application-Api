@@ -9,10 +9,46 @@ const router = require("express").Router();
 const User = require("../models/User");
 const Post = require("../models/Post");
 const bcrypt = require("bcrypt");
-const authMiddleware = require("../middlewares/authMiddleware");
+const authGuard = require("../middlewares/authMiddleware");
 
-// Import the authMiddleware
-router.use(authMiddleware);
+router.use(authGuard);
+
+// GET USER
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get user information
+ *     description: Retrieve user information by ID.
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: User ID
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *       500:
+ *         description: Internal Server Error
+ */
+router.get("/:id", authGuard, async (req, res, next) => {
+  try {
+    const requestedUserId = req.params.id;
+
+    try {
+      let user = await User.findById(requestedUserId).select("-password");
+      if (!user) {
+        throw new Error("User not found");
+      }
+      return res.status(200).json(user);
+    } catch (error) {
+      throw new Error("Invalid user ID");
+    }
+  } catch (err) {
+    next(err);
+  }
+});
 
 // UPDATE USER
 /**
@@ -50,27 +86,35 @@ router.use(authMiddleware);
  *       500:
  *         description: Internal Server Error
  */
-router.put("/:id", async (req, res) => {
-  if (req.user.id === req.params.id) {
-    if (req.body.password) {
-      const salt = await bcrypt.genSalt(10);
-      req.body.password = await bcrypt.hash(req.body.password, salt);
+router.put("/:id", authGuard, async (req, res, next) => {
+  try {
+    const requestedUserId = req.params.id;
+    const authenticatedUserId = req.user._id;
+
+    // Check if the authenticated user is the same as the requested user
+    if (requestedUserId !== authenticatedUserId.toString()) {
+      throw new Error("Unauthorized: You can only update your own profile");
     }
-    try {
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: req.body,
-        },
-        { new: true }
-      );
-      res.status(200).json(updatedUser);
-    } catch (err) {
-      console.log("Error:", err);
-      res.status(500).json(err);
+
+    let user = await User.findById(requestedUserId).select("-password");
+
+    if (!user) {
+      throw new Error("User not found");
     }
-  } else {
-    res.status(401).json("You can update only your account!");
+
+    user.username = req.body.username || user.username;
+    user.email = req.body.email || user.email;
+    if (req.body.password && req.body.password.length < 6) {
+      throw new Error("Password length must be at least 6 characters");
+    } else if (req.body.password) {
+      user.password = req.body.password;
+    }
+
+    const updatedUserProfile = await user.save();
+
+    res.status(200).json(updatedUserProfile);
+  } catch (error) {
+    next(error);
   }
 });
 
@@ -113,35 +157,6 @@ router.delete("/:id", async (req, res) => {
     }
   } else {
     res.status(401).json("You can delete only your account!");
-  }
-});
-
-// GET USER
-/**
- * @swagger
- * /api/users/{id}:
- *   get:
- *     summary: Get user information
- *     description: Retrieve user information by ID.
- *     tags: [Users]
- *     parameters:
- *       - in: path
- *         name: id
- *         description: User ID
- *         required: true
- *     responses:
- *       200:
- *         description: Successful response
- *       500:
- *         description: Internal Server Error
- */
-router.get("/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    const { password, ...others } = user._doc;
-    res.status(200).json(others);
-  } catch (err) {
-    res.status(500).json(err);
   }
 });
 

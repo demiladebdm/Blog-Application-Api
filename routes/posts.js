@@ -7,126 +7,18 @@
 
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const cloudinary = require("cloudinary").v2;
 const router = express.Router();
-// const multer = require("multer");
-// const uploadMiddleware = multer({ dest: "uploads/" });
+const mongoose = require("mongoose");
 const fs = require("fs");
-// router.use("/uploads", express.static(__dirname + "/uploads"));
+const authGuard = require("../middlewares/authMiddleware");
 
 const User = require("../models/User");
+const Category = require("../models/Category");
 const Post = require("../models/Post");
 
-const secret = process.env.SECRET;
 
-// Configure Cloudinary with your cloud credentials
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET,
-});
-
-// //CREATE POST
-// router.post("/", async (req, res) => {
-//   // console.log("request", req);
-//   // console.log("requ", req);
-//   // const { originalname, path } = req.file;
-//   // const parts = originalname.split(".");
-//   // const ext = parts[parts.length - 1];
-//   // const newPath = path + "." + ext;
-//   // fs.renameSync(path, newPath);
-
-//   // console.log("Request:", req);
-//   // console.log("Uploaded File:", req.file);
-//   // res.status(500).json({ originalname: originalname, newPath });
-
-//   // const newPost = new Post(req.body);
-//   // const { title, summary, content } = req.body;
-//   // const newPost = await Post.create({
-//   //   title,
-//   //   // summary,
-//   //   desc,
-//   //   // photo,
-//   //   // username,
-//   //   categories,
-//   //   photo,
-//   //   username: info.id,
-//   // });
-
-//   // try {
-//   //   // const savedPost = await newPost.save();
-//   //   const newPost = await Post.create({
-//   //     title,
-//   //     desc,
-//   //     categories,
-//   //     photo: req.file.filename,
-//   //     username: info.id,
-//   //   });
-//   //   res.status(200).json(newPost);
-//   // } catch (err) {
-//   //   console.error(err);
-//   //   res.status(500).json({ err: "Internal Server Error" });
-//   // }
-
-//   try {
-//     // Your file upload logic here...
-//     // console.log("request", req);
-//     // console.log("requ", req.file);
-//     // const { originalname, path } = req.file;
-//     // const parts = originalname.split(".");
-//     // const ext = parts[parts.length - 1];
-//     // const newPath = path + "." + ext;
-//     // fs.renameSync(path, newPath);
-
-//     const { title, desc, categories, username } = req.body;
-//     const newPost = await Post.create({
-//       title,
-//       desc,
-//       categories,
-//       photo,
-//       username,
-//       // photo: req.file.filename,
-//       // username: info.id, // Assuming 'info' contains the user ID.
-//     });
-
-//     res.status(200).json(newPost);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ err: "Internal Server Error" });
-//   }
-// });
-
-// //CREATE POST
-// router.post("/", async (req, res) => {
-//   try {
-//     // Your file upload logic here...
-//     // console.log("request", req);
-//     // console.log("requ", req.file);
-//     // const { originalname, path } = req.file;
-//     // const parts = originalname.split(".");
-//     // const ext = parts[parts.length - 1];
-//     // const newPath = path + "." + ext;
-//     // fs.renameSync(path, newPath);
-
-//     const { title, desc, categories, username, photo } = req.body;
-//     console.log("body", req.body)
-//     const newPost = await Post.create({
-//       title,
-//       desc,
-//       categories,
-//       photo,
-//       username,
-//       // photo: req.file.filename,
-//       // username: info.id, // Assuming 'info' contains the user ID.
-//     });
-
-//     console.log("post-body", newPost);
-//     res.status(200).json(newPost);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ err: "Internal Server Error" });
-//   }
-// });
+// Applying authGuard middleware only to the routes where authentication is required
+router.use(["/api/posts", "/api/posts/{id}"], authGuard);
 
 //CREATE POST
 /**
@@ -137,35 +29,34 @@ cloudinary.config({
  *     description: Create a new post with title, description, categories, and an attached photo.
  *     tags: [Posts]
  *     consumes:
- *       - multipart/form-data
+ *       - application/json
  *     parameters:
- *       - in: formData
- *         name: file
- *         type: file
- *         description: The photo file to be uploaded
+ *       - in: body
+ *         name: post
+ *         description: The post data in JSON format
  *         required: true
- *       - in: formData
- *         name: title
- *         type: string
- *         description: Title of the post
- *         required: true
- *       - in: formData
- *         name: desc
- *         type: string
- *         description: Description of the post
- *         required: true
- *       - in: formData
- *         name: categories
- *         type: string
- *         description: Categories associated with the post
- *         required: true
- *       - in: formData
- *         name: username
- *         type: string
- *         description: Username of the author
- *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             title:
+ *               type: string
+ *               description: Title of the post
+ *             desc:
+ *               type: string
+ *               description: Description of the post
+ *             categories:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               description: Categories associated with the post
+ *             photo:
+ *               type: string
+ *               description: The photo URL or base64 encoded image data
+ *             user:
+ *               type: string
+ *               description: Username of the author
  *     responses:
- *       200:
+ *       201:
  *         description: Post created successfully
  *         content:
  *           application/json:
@@ -175,7 +66,7 @@ cloudinary.config({
  *                 _id: '1234567890abcdef12345678'
  *                 title: Example Post
  *                 desc: This is an example post.
- *                 categories: Technology
+ *                 categories: [Technology, AnotherCategory]
  *                 username: john_doe
  *                 photo: '/uploads/1234567890abcdef12345678.jpg'
  *                 createdAt: '2023-09-30T12:00:00.000Z'
@@ -184,146 +75,182 @@ cloudinary.config({
  *       500:
  *         description: Internal Server Error
  */
-// router.post("/", uploadMiddleware.single("file"), async (req, res) => {
-//   // const { originalname, path } = req.file;
-//   // console.log("file", req.file);
-//   // const parts = originalname.split(".");
-//   // const ext = parts[parts.length - 1];
-//   // const newPath = path + "." + ext;
-//   // fs.renameSync(path, newPath);
-
-//   const { token } = req.cookies;
-//   console.log("cookie", req.cookies);
-
-//   jwt.verify(token, secret, {}, async (err, info) => {
-//     console.log("info", info);
-
-//     if (err) throw err;
-
-//     // // Upload image to Cloudinary
-//     // const cloudinaryResponse = await cloudinary.uploader.upload(newPath);
-
-//     const { title, desc, categories, username, photo } = req.body;
-//     console.log("doc", req.body);
-//     const postDoc = await Post.create({
-//       title,
-//       desc,
-//       categories,
-//       photo,
-//       author: info.id,
-//     });
-//     res.json(postDoc);
-//   });
-//   // try {
-//   //   // Your file upload logic here...
-//   //   // console.log("request", req);
-//   //   // console.log("requ", req.file);
-//   //   // const { originalname, path } = req.file;
-//   //   // const parts = originalname.split(".");
-//   //   // const ext = parts[parts.length - 1];
-//   //   // const newPath = path + "." + ext;
-//   //   // fs.renameSync(path, newPath);
-
-//   //   const { title, desc, categories, username, photo } = req.body;
-//   //   console.log("body", req.body)
-//   //   const newPost = await Post.create({
-//   //     title,
-//   //     desc,
-//   //     categories,
-//   //     photo,
-//   //     username,
-//   //     // photo: req.file.filename,
-//   //     // username: info.id, // Assuming 'info' contains the user ID.
-//   //   });
-
-//   //   console.log("post-body", newPost);
-//   //   res.status(200).json(newPost);
-//   // } catch (err) {
-//   //   console.error(err);
-//   //   res.status(500).json({ err: "Internal Server Error" });
-//   // }
-// });
-router.post("/", async (req, res) => {
+router.post("/", authGuard, async (req, res, next) => {
   try {
-    const { title, desc, categories, photo } = req.body;
+    const { title, desc, categories, photo, user } = req.body;
+
+    // Validate if the required fields are present
+    if (!title || !desc || !categories) {
+      throw new Error("All required fields must be provided");
+    }
+
+    // Assuming categories is an array of strings (category names)
+    const categoryIds = await Promise.all(
+      categories.map(async (categoryName) => {
+        // Check if the category already exists
+        let category = await Category.findOne({ name: categoryName });
+
+        // If it doesn't exist, create a new category
+        if (!category) {
+          category = await Category.create({ name: categoryName });
+        }
+
+        return category._id;
+      })
+    );
+
+    // Convert user to ObjectId if it's not an empty string
+    const userId = user ? mongoose.Types.ObjectId(user) : null;
 
     // Create a new post without token verification
     const newPost = await Post.create({
       title,
       desc,
-      categories,
+      categories: categoryIds,
       photo,
+      user: userId,
     });
 
-    res.status(201).json(newPost);
-  } catch (err) {
-    let errorMessage = err.message || "Internal Server Error";
+    // Populate the categories in a separate query
+    const populatedPost = await Post.findById(newPost._id).populate("categories");
 
-    res.status(500).json({ err: errorMessage });
+    res.status(201).json(populatedPost);
+  } catch (err) {
+    next(err);
   }
 });
 
-// //CREATE POST
-// router.post("/", uploadMiddleware.single("file"), async (req, res) => {
-//   // const { originalname, path } = req.file;
-//   // const parts = originalname.split(".");
-//   // const ext = parts[parts.length - 1];
-//   // const newPath = path + "." + ext;
-//   // fs.renameSync(path, newPath);
-
-//   // if (err) throw err;
-//   const { title, desc, categories, photo, username } = req.body;
-//   const postDoc = await Post.create({
-//     title,
-//     desc,
-//     categories,
-//     photo,
-//     username,
-//   });
-//   res.json(postDoc);
-
-//   // const { token } = req.cookies;
-//   // jwt.verify(token, secret, {}, async (err, info) => {
-//   //   if (err) throw err;
-//   //   const { title, desc, categories, photo, username } = req.body;
-//   //   const postDoc = await Post.create({
-//   //     title,
-//   //     desc,
-//   //     categories,
-//   //     photo: req.file.filename,
-//   //     username: info.id,
-//   //   });
-//   //   res.json(postDoc);
-//   // });
-// });
 
 //UPDATE POST
-router.put("/:id", async (req, res) => {
+/**
+ * @swagger
+ * /api/posts/{id}:
+ *   put:
+ *     summary: Update a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the post
+ *         schema:
+ *           type: string
+ *       - in: body
+ *         name: post
+ *         description: The updated post data in JSON format
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             title:
+ *               type: string
+ *               description: Updated title of the post
+ *             desc:
+ *               type: string
+ *               description: Updated description of the post
+ *             categories:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               description: Updated categories associated with the post
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             example:
+ *               _id: '1234567890abcdef12345678'
+ *               title: Updated Example Post
+ *               desc: This is an updated example post.
+ *               categories: [UpdatedTechnology, UpdatedAnotherCategory]
+ *               username: john_doe
+ *               photo: '/uploads/1234567890abcdef12345678.jpg'
+ *               createdAt: '2023-09-30T12:00:00.000Z'
+ *               updatedAt: '2023-09-30T12:00:00.000Z'
+ *               __v: 0
+ *       '500':
+ *         description: Internal Server Error
+ */
+router.put("/:id", authGuard, async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
     if (post.username === req.body.username) {
       try {
+        // Assuming categories is an array of strings (category names)
+        const categoryIds = await Promise.all(
+          req.body.categories.map(async (categoryName) => {
+            // Check if the category already exists
+            let category = await Category.findOne({ name: categoryName });
+
+            // If it doesn't exist, create a new category
+            if (!category) {
+              category = await Category.create({ name: categoryName });
+            }
+
+            return category._id;
+          })
+        );
+
         const updatedPost = await Post.findByIdAndUpdate(
           req.params.id,
           {
             $set: req.body,
+            categories: categoryIds
           },
           { new: true }
         );
-        res.status(200).json(updatedPost);
+
+        if (!updatedPost) {
+          throw new Error("Post not found");
+        }
+
+        // Populate the categories in a separate query
+        const populatedUpdatedPost = await Post.findById(
+          updatedPost._id
+        ).populate("categories");
+
+        res.status(200).json(populatedUpdatedPost);
       } catch (err) {
-        res.status(500).json(err);
+        console.log("ertr", err)
+        throw new Error("Something went wrong");
       }
     } else {
-      res.status(401).json("You can update only your post!");
+      throw new Error("You can update only your post!");
     }
   } catch (err) {
-    res.status(500).json(err);
+    next(err);
   }
 });
 
 //DELETE POST
-router.delete("/:id", async (req, res) => {
+/**
+ * @swagger
+ * /api/posts/{id}:
+ *   delete:
+ *     summary: Delete a post by ID
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the post to be deleted
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Post has been deleted...
+ *       '500':
+ *         description: Internal Server Error
+ */
+router.delete("/:id", authGuard, async (req, res, next) => {
   try {
     const post = await Post.findById(req.params.id);
     if (post.username === req.body.username) {
@@ -331,20 +258,20 @@ router.delete("/:id", async (req, res) => {
         await post.delete();
         res.status(200).json("Post has been deleted...");
       } catch (err) {
-        res.status(500).json(err);
+        throw new Error("Something went wrong");
       }
     } else {
-      res.status(401).json("You can delete only your post!");
+      throw new Error("You can delete only your post!");
     }
   } catch (err) {
-    res.status(500).json(err);
+    next(err);
   }
 });
 
 //GET POST
 /**
  * @swagger
- * /posts/{id}:
+ * /api/posts/{id}:
  *   get:
  *     summary: Get a post by ID
  *     tags: [Posts]
@@ -365,12 +292,24 @@ router.delete("/:id", async (req, res) => {
  *               title: Example Post
  *               content: This is an example post.
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const postId = req.params.id;
+
+    // Validate if postId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      throw new Error("Invalid Post ID");
+    }
+
+    const post = await Post.findById(postId).populate("categories");
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
     res.status(200).json(post);
   } catch (err) {
-    res.status(500).json(err);
+    next(err);
   }
 });
 
@@ -397,35 +336,51 @@ router.get("/:id", async (req, res) => {
  *         description: Successful response
  *         content:
  *           application/json:
- *             example:
+ *            example:
  *               - _id: 123
  *                 title: Example Post 1
  *                 content: This is the first example post.
+ *                 categories:
+ *                   - _id: 456
+ *                     name: Category1
  *               - _id: 456
  *                 title: Example Post 2
  *                 content: This is the second example post.
+ *                 categories:
+ *                   - _id: 789
+ *                     name: Category2
  */
-
-router.get("/", async (req, res) => {
-  const username = req.query.user;
-  const catName = req.query.cat;
+router.get("/", async (req, res, next) => {
+  let username = req.query.user;
+  let catName = req.query.cat;
   try {
     let posts;
+
     if (username) {
       posts = await Post.find({ username });
     } else if (catName) {
-      posts = await Post.find({
-        categories: {
-          $in: [catName],
-        },
-      });
+      // Decode the category name
+      catName = decodeURIComponent(catName);
+      const lowerCaseCatName = catName.toLowerCase();
+
+      const category = await Category.findOne({ name: lowerCaseCatName });
+
+      if (category) {
+        // Log the posts directly to see what's being retrieved
+        posts = await Post.find({ categories: category._id }).populate(
+          "categories"
+        );
+      } else {
+        // If the category doesn't exist, return an empty array
+        posts = [];
+      }
     } else {
-      posts = await Post.find();
+      posts = await Post.find().populate("categories");
     }
-    // console.log("posts", posts);
+
     res.status(200).json(posts);
   } catch (err) {
-    res.status(500).json(err);
+    next(err)
   }
 });
 

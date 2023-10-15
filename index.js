@@ -1,5 +1,6 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
 const app = express();
 const dontenv = require("dotenv");
 const mongoose = require("mongoose");
@@ -10,6 +11,8 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocs = require("./swaggerDocs");
 const fs = require("fs");
+
+const { errorResponseHandler, invalidPathHandler } = require("./middlewares/errorHandler");
 
 dontenv.config();
 
@@ -49,6 +52,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.use(cors({ credentials: true, origin: allowedOrigins }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 // app.use("/images", express.static(path.join(__dirname, "/images")));
 
 // const upload = multer({ dest: "uploads/" });
@@ -68,6 +73,9 @@ app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
 app.use("/api/categories", categoryRoute);
 app.use("/api/emails", emailRoute);
+
+app.use(invalidPathHandler);
+app.use(errorResponseHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
