@@ -20,7 +20,7 @@ const ContactUs = require("../models/ContactUs");
  *       - application/json
  *     parameters:
  *       - in: body
- *         name: contactUs
+ *         name: contact
  *         description: ContactUs information for submission
  *         required: true
  *         schema:
