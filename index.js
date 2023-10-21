@@ -12,14 +12,17 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerDocs = require("./swaggerDocs");
 const fs = require("fs");
 
-const { errorResponseHandler, invalidPathHandler } = require("./middlewares/errorHandler");
+const {
+  errorResponseHandler,
+  invalidPathHandler,
+} = require("./middlewares/errorHandler");
 
 dontenv.config();
 
 const allowedOrigins = [
   "http://localhost:3000",
   "https://blog-application-blogclient.vercel.app",
-  "https://blog-application-client-89uyk6cic-demiladebdm.vercel.app/"
+  "https://blog-application-client-89uyk6cic-demiladebdm.vercel.app/",
 ];
 
 mongoose
@@ -67,12 +70,16 @@ const userRoute = require("./routes/users");
 const postRoute = require("./routes/posts");
 const categoryRoute = require("./routes/categories");
 const emailRoute = require("./routes/emails");
+const contactUsRoute = require("./routes/contactus");
+const HabariRoute = require("./routes/habari");
 
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
 app.use("/api/posts", postRoute);
 app.use("/api/categories", categoryRoute);
 app.use("/api/emails", emailRoute);
+app.use("/api/contactUs", contactUsRoute);
+app.use("/api/habari", HabariRoute);
 
 app.use(invalidPathHandler);
 app.use(errorResponseHandler);

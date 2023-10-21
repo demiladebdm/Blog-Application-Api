@@ -26,6 +26,8 @@ const Email = require("../models/Email");
  *         schema:
  *           type: object
  *           properties:
+ *             name:
+ *               type: string
  *             email:
  *               type: string
  *     responses:
@@ -35,9 +37,9 @@ const Email = require("../models/Email");
  *         description: Internal Server Error
  */
 router.post("/", async (req, res) => {
-  const { email } = req.body;
+  const { name, email } = req.body;
   try {
-    const newEmail = await Email.create({ email });
+    const newEmail = await Email.create({ name, email });
     res.status(200).json(newEmail);
   } catch (err) {
     res.status(500).json({ err: "Internal Server Error" });
