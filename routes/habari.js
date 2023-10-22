@@ -94,13 +94,18 @@ router.post("/", async (req, res, next) => {
 
     // Save the Habari data to MongoDB (optional, based on your use case)
     const savedHabari = await Habari.create(req.body);
+    console.log("req", req)
+    console.log("req-body", req.body);
+    console.log("haba", savedHabari);
 
     // Generate random text (simple approach)
     const randomText = generateRandomText();
 
     // Send plain text as the response
+    console.log("body", randomText)
     res.status(200).send(randomText);
   } catch (err) {
+    console.log("err", err);
     next(err);
   }
 });
