@@ -8,7 +8,7 @@ const specs = swaggerJsdoc(swaggerOptions);
 
 const app = express();
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Your routes go here
 

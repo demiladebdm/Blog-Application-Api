@@ -72,7 +72,7 @@ const postRoute = require("./routes/posts");
 const categoryRoute = require("./routes/categories");
 const emailRoute = require("./routes/emails");
 const contactusRoute = require("./routes/contactus");
-const HabariRoute = require("./routes/habari");
+const habariRoute = require("./routes/habari");
 
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
@@ -80,12 +80,12 @@ app.use("/api/posts", postRoute);
 app.use("/api/categories", categoryRoute);
 app.use("/api/emails", emailRoute);
 app.use("/api/contactus", contactusRoute);
-app.use("/api/habari", HabariRoute);
+app.use("/api/habari", habariRoute);
 
 app.use(invalidPathHandler);
 app.use(errorResponseHandler);
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });
