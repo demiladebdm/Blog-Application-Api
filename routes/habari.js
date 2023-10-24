@@ -55,6 +55,7 @@ const Habari = require("../models/Habari");
  *         description: Internal Server Error
  */
 router.post("/", async (req, res, next) => {
+  console.log("outside", req.body);
   try {
     const {
       transactionid,
@@ -94,7 +95,7 @@ router.post("/", async (req, res, next) => {
 
     // Save the Habari data to MongoDB (optional, based on your use case)
     const savedHabari = await Habari.create(req.body);
-    console.log("req", req)
+    // console.log("req", req)
     console.log("req-body", req.body);
     console.log("haba", savedHabari);
 

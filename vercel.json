@@ -13,11 +13,11 @@
     },
     {
       "src": "/api-docs/",
-      "dest": "/"
+      "dest": "/index.js"
     },
     {
-      "src": "/api/",
-      "dest": "/"
+      "src": "/api/(.*)",
+      "dest": "/index.js"
     },
     {
       "src": "(.*)",
