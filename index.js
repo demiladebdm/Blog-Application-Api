@@ -50,7 +50,7 @@ mongoose
 
 // Swagger setup
 const specs = swaggerJsdoc(swaggerDocs);
-app.use("/", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 // app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use(cors({ credentials: true, origin: allowedOrigins }));

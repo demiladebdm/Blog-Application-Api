@@ -29,7 +29,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js && npm run open-docs",
-    "open-docs": "start http://localhost:5000",
+    "open-docs": "start http://localhost:5000/api-docs",
     "vercel-build": "echo hello"
   },
   "author": "",
