@@ -23,6 +23,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://blog-application-blogclient.vercel.app",
   "https://blog-application-client-89uyk6cic-demiladebdm.vercel.app/",
+  "http://wolstreetfinance.com/",
+  "https://wolstreetfinance.com/",
 ];
 
 mongoose

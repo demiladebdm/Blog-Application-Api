@@ -94,6 +94,10 @@ router.post("/", authGuard, async (req, res, next) => {
         if (!category) {
           category = await Category.create({ name: categoryName });
         }
+        // If it doesn't exist, return an error
+        // if (!category) {
+        //   throw new Error(`Category '${categoryName}' does not exist`);
+        // }
 
         return category._id;
       })
@@ -186,10 +190,14 @@ router.put("/:id", authGuard, async (req, res, next) => {
             // Check if the category already exists
             let category = await Category.findOne({ name: categoryName });
 
-            // If it doesn't exist, create a new category
+            // // If it doesn't exist, create a new category
             if (!category) {
               category = await Category.create({ name: categoryName });
             }
+            // If it doesn't exist, return an error
+            // if (!category) {
+            //   throw new Error(`Category '${categoryName}' does not exist`);
+            // }
 
             return category._id;
           })
