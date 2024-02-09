@@ -170,11 +170,11 @@ router.post("/forgot-password", async (req, res, next) => {
     const { email } = req.body;
     console.log("email", email)
 
-    // const user = await User.findOne({ email });
-    // if (!user) {
-    //   throw new Error("Email not found");
-    // }
-    // console.log("user", user)
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new Error("Email not found");
+    }
+    console.log("user", user)
 
     const token = jwt.sign({ email }, secret, { expiresIn: tokenExpiration });
     console.log("token", token)
