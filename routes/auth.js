@@ -9,9 +9,12 @@ const router = require("express").Router();
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 require("dotenv").config();
 
 const secret = process.env.SECRET;
+const baseUrl = process.env.BASE_URL;
+const tokenExpiration = "1h";
 
 //REGISTER METHOD
 /**
@@ -130,6 +133,150 @@ router.post("/login", async (req, res, next) => {
     });
   } catch (err) {
     next(err)
+  }
+});
+
+
+// Forgot Password Route
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Initiate password reset
+ *     description: Initiates the process to reset the user's password by sending a password reset email.
+ *     tags: [Authentication]
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - in: body
+ *         name: email
+ *         description: User's email address to initiate password reset.
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             email:
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Password reset email sent successfully
+ *       400:
+ *         description: Email not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.post("/forgot-password", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    console.log("email", email)
+
+    // const user = await User.findOne({ email });
+    // if (!user) {
+    //   throw new Error("Email not found");
+    // }
+    // console.log("user", user)
+
+    const token = jwt.sign({ email }, secret, { expiresIn: tokenExpiration });
+    console.log("token", token)
+
+    // Send password reset email to user
+    const transporter = nodemailer.createTransport({
+      // Set up your nodemailer transporter configuration here
+      service: "gmail",
+      auth: {
+        user: "danielmordi22@gmail.com",
+        pass: "tnkellqjshxkrqgm",
+      },
+    });
+    
+    console.log("transporter", transporter)
+    // console.log("auth", auth);
+    // console.log("user", user);
+    // console.log("pass", pass);
+
+    const mailOptions = {
+      from: "danielmordi22@gmail.com",
+      to: email,
+      subject: "Password Reset",
+      // text: `You are receiving this email because you requested a password reset. Click the following link to reset your password: ${baseUrl}/reset-password/${token}`,
+      html: `You are receiving this email because you requested a password reset. Click the following link to reset your password: <a href="${baseUrl}/reset-password/${token}">Reset Password</a>`,
+    };
+     console.log("mailOptions", mailOptions);
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error("Error sending email:", err);
+        return res.status(500).json("Error sending password reset email");
+      }
+      console.log("Email:", info);
+      console.log("Email sent:", info.response);
+      return res.status(200).json("Password reset email sent");
+    });
+  } catch (err) {
+    console.error("next", err)
+    next(err);
+  }
+});
+
+// Reset Password Endpoint
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password
+ *     description: Resets the user's password using the provided token and new password.
+ *     tags: [Authentication]
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *       - in: body
+ *         name: resetData
+ *         description: Password reset data including token and new password.
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             token:
+ *               type: string
+ *             password:
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Invalid or expired token
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal Server Error
+ */
+router.post("/reset-password", async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    jwt.verify(token, secret, async (err, decoded) => {
+      if (err) {
+        console.error("Token verification failed:", err);
+        return res.status(400).json("Invalid or expired token");
+      }
+
+      const { email } = decoded;
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return res.status(404).json("User not found");
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPass = await bcrypt.hash(password, salt);
+
+      user.password = hashedPass;
+      await user.save();
+
+      return res.status(200).json("Password updated successfully");
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
