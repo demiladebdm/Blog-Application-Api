@@ -14,6 +14,8 @@ require("dotenv").config();
 
 const secret = process.env.SECRET;
 const baseUrl = process.env.BASE_URL;
+const node_email = process.env.NODE_MAIL;
+const node_password = process.env.NODE_PASS;
 const tokenExpiration = "1h";
 
 //REGISTER METHOD
@@ -109,7 +111,7 @@ router.post("/login", async (req, res, next) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      throw new Error("Email not found")
+      throw new Error("Email not found");
     }
 
     const validated = await bcrypt.compare(password, user.password);
@@ -132,10 +134,9 @@ router.post("/login", async (req, res, next) => {
       });
     });
   } catch (err) {
-    next(err)
+    next(err);
   }
 });
-
 
 // Forgot Password Route
 /**
@@ -168,28 +169,28 @@ router.post("/login", async (req, res, next) => {
 router.post("/forgot-password", async (req, res, next) => {
   try {
     const { email } = req.body;
-    console.log("email", email)
+    console.log("email", email);
 
     const user = await User.findOne({ email });
     if (!user) {
       throw new Error("Email not found");
     }
-    console.log("user", user)
+    console.log("user", user);
 
     const token = jwt.sign({ email }, secret, { expiresIn: tokenExpiration });
-    console.log("token", token)
+    console.log("token", token);
 
     // Send password reset email to user
     const transporter = nodemailer.createTransport({
       // Set up your nodemailer transporter configuration here
       service: "gmail",
       auth: {
-        user: "danielmordi22@gmail.com",
-        pass: "tnkellqjshxkrqgm",
+        user: node_email,
+        pass: node_password,
       },
     });
-    
-    console.log("transporter", transporter)
+
+    console.log("transporter", transporter);
     // console.log("auth", auth);
     // console.log("user", user);
     // console.log("pass", pass);
@@ -201,7 +202,7 @@ router.post("/forgot-password", async (req, res, next) => {
       // text: `You are receiving this email because you requested a password reset. Click the following link to reset your password: ${baseUrl}/reset-password/${token}`,
       html: `You are receiving this email because you requested a password reset. Click the following link to reset your password: <a href="${baseUrl}/reset-password/${token}">Reset Password</a>`,
     };
-     console.log("mailOptions", mailOptions);
+    console.log("mailOptions", mailOptions);
 
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
@@ -213,7 +214,7 @@ router.post("/forgot-password", async (req, res, next) => {
       return res.status(200).json("Password reset email sent");
     });
   } catch (err) {
-    console.error("next", err)
+    console.error("next", err);
     next(err);
   }
 });
